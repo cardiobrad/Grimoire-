@@ -1,0 +1,32 @@
+{
+  "experiment": "bimodality_priority3",
+  "mc_runs_per_formation": 500,
+  "max_steps": 200,
+  "bimodality_detected": true,
+  "formations": [
+    {
+      "name": "edge_sparse_6",
+      "n_runs": 500,
+      "completed": 500,
+      "censored": 0,
+      "censored_pct": 0.0,
+      "bimodal": true
+    },
+    {
+      "name": "edge_thin_line_8",
+      "n_runs": 500,
+      "completed": 500,
+      "censored": 0,
+      "censored_pct": 0.0,
+      "bimodal": true
+    },
+    {
+      "name": "edge_loose_cluster_7",
+      "n_runs": 500,
+      "completed": 500,
+      "censored": 0,
+      "censored_pct": 0.0,
+      "bimodal": true
+    }
+  ]
+}

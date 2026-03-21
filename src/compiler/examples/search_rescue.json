@@ -1,0 +1,30 @@
+{
+  "name": "Search & Rescue — Compact Cluster",
+  "area_width": 200,
+  "area_height": 200,
+  "grid_resolution": 5.0,
+  "target_zones": [{"x": 100, "y": 100, "radius": 30}],
+  "obstacles": [],
+  "drones": [
+    {"id": "sar-00", "x": 95.2, "y": 107.3, "battery": 0.95, "comms_radius": 40, "sensor_radius": 25, "role": "command"},
+    {"id": "sar-01", "x": 102.1, "y": 98.5, "battery": 0.88, "comms_radius": 40, "sensor_radius": 25, "role": "relay"},
+    {"id": "sar-02", "x": 89.4, "y": 103.2, "battery": 0.92, "comms_radius": 40, "sensor_radius": 25, "role": "relay"},
+    {"id": "sar-03", "x": 108.6, "y": 95.1, "battery": 0.78, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-04", "x": 97.8, "y": 112.4, "battery": 0.85, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-05", "x": 105.3, "y": 104.7, "battery": 0.91, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-06", "x": 91.7, "y": 96.8, "battery": 0.73, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-07", "x": 100.4, "y": 88.2, "battery": 0.82, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-08", "x": 113.1, "y": 101.9, "battery": 0.96, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-09", "x": 86.5, "y": 110.6, "battery": 0.77, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-10", "x": 99.3, "y": 93.4, "battery": 0.89, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-11", "x": 106.8, "y": 109.1, "battery": 0.84, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-12", "x": 93.6, "y": 85.7, "battery": 0.90, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-13", "x": 110.2, "y": 92.3, "battery": 0.76, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-14", "x": 88.9, "y": 99.8, "battery": 0.93, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-15", "x": 103.5, "y": 115.2, "battery": 0.81, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-16", "x": 96.1, "y": 102.6, "battery": 0.87, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-17", "x": 107.4, "y": 97.4, "battery": 0.79, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-18", "x": 94.8, "y": 108.9, "battery": 0.94, "comms_radius": 40, "sensor_radius": 25, "role": "worker"},
+    {"id": "sar-19", "x": 101.7, "y": 91.5, "battery": 0.86, "comms_radius": 40, "sensor_radius": 25, "role": "worker"}
+  ]
+}

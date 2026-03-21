@@ -1,0 +1,15 @@
+{
+  "X": 29,
+  "n": 37,
+  "p_value": 0.00037645,
+  "critical_value": 24,
+  "alpha": 0.05,
+  "gate_passed": true,
+  "anti_correlation_flag": false,
+  "movement_mode": "frontier",
+  "gsm_type": "coverage",
+  "scipy_verification": {
+    "command": "1 - binom.cdf(29-1, 37, 0.5)",
+    "result": 0.0003764485300052911
+  }
+}

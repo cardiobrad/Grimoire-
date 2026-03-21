@@ -1,0 +1,33 @@
+{
+  "name": "Warehouse — Overloaded Bottleneck",
+  "area_width": 200,
+  "area_height": 200,
+  "grid_resolution": 5.0,
+  "target_zones": [],
+  "obstacles": [
+    {"x": 70, "y": 120, "width": 20, "height": 60},
+    {"x": 120, "y": 40, "width": 30, "height": 40}
+  ],
+  "drones": [
+    {"id": "wh-aisle-00", "x": 79.2, "y": 99.1, "battery": 0.72, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-01", "x": 81.5, "y": 101.3, "battery": 0.65, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-02", "x": 78.8, "y": 97.6, "battery": 0.81, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-03", "x": 80.1, "y": 100.8, "battery": 0.58, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-04", "x": 82.3, "y": 98.4, "battery": 0.77, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-05", "x": 79.7, "y": 102.1, "battery": 0.69, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-06", "x": 81.0, "y": 99.5, "battery": 0.84, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-07", "x": 78.4, "y": 101.7, "battery": 0.62, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-08", "x": 80.6, "y": 97.2, "battery": 0.75, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-09", "x": 82.1, "y": 100.3, "battery": 0.53, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-10", "x": 79.5, "y": 98.9, "battery": 0.88, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-aisle-11", "x": 81.3, "y": 102.5, "battery": 0.71, "comms_radius": 30, "sensor_radius": 10, "role": "worker"},
+    {"id": "wh-floor-00", "x": 40, "y": 55, "battery": 0.91, "comms_radius": 35, "sensor_radius": 15, "role": "command"},
+    {"id": "wh-floor-01", "x": 55, "y": 62, "battery": 0.82, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-02", "x": 70, "y": 58, "battery": 0.76, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-03", "x": 85, "y": 65, "battery": 0.88, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-04", "x": 100, "y": 52, "battery": 0.69, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-05", "x": 115, "y": 60, "battery": 0.94, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-06", "x": 130, "y": 67, "battery": 0.73, "comms_radius": 35, "sensor_radius": 15, "role": "worker"},
+    {"id": "wh-floor-07", "x": 145, "y": 54, "battery": 0.85, "comms_radius": 35, "sensor_radius": 15, "role": "worker"}
+  ]
+}

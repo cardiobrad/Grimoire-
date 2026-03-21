@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-03-20T23:06:25.327621+00:00",
+  "movement_mode": "frontier",
+  "files": {
+    "simulator": {
+      "path": "/home/claude/gate2_backend/gate2_batch_simulator.py",
+      "sha256": "071c45f016ed360ad167f7fb376eeb147a406580e251d2cb99031941b03d770b"
+    },
+    "config": {
+      "path": "/home/claude/gate2_backend/batch_config.json",
+      "sha256": "57839788818a1f97878ae931c795b9e8aaf37fa0445ac9452d7459599b6c78bb"
+    },
+    "pairs": {
+      "path": "/home/claude/gate2_backend/gate2_certified_pairs.json",
+      "sha256": "7312bd62a1e99dd6e1fb42c3369507293fa983ec393f9bf8a4c84ca759a5a4f2"
+    }
+  }
+}

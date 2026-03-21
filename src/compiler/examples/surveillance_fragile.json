@@ -1,0 +1,22 @@
+{
+  "name": "Surveillance — Scattered Line",
+  "area_width": 200,
+  "area_height": 200,
+  "grid_resolution": 5.0,
+  "target_zones": [{"x": 100, "y": 100, "radius": 80}],
+  "obstacles": [],
+  "drones": [
+    {"id": "surv-00", "x": 15, "y": 97, "battery": 0.45, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-01", "x": 30, "y": 103, "battery": 0.52, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-02", "x": 45, "y": 95, "battery": 0.38, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-03", "x": 60, "y": 101, "battery": 0.61, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-04", "x": 75, "y": 98, "battery": 0.44, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-05", "x": 90, "y": 105, "battery": 0.57, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-06", "x": 105, "y": 99, "battery": 0.63, "comms_radius": 12, "sensor_radius": 15, "role": "relay"},
+    {"id": "surv-07", "x": 120, "y": 93, "battery": 0.41, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-08", "x": 135, "y": 102, "battery": 0.55, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-09", "x": 150, "y": 96, "battery": 0.48, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-10", "x": 165, "y": 104, "battery": 0.36, "comms_radius": 12, "sensor_radius": 15, "role": "worker"},
+    {"id": "surv-11", "x": 180, "y": 100, "battery": 0.59, "comms_radius": 12, "sensor_radius": 15, "role": "worker"}
+  ]
+}
