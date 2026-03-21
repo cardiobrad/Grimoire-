@@ -1,5 +1,7 @@
 # GRIMOIRE
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19152177.svg)](https://doi.org/10.5281/zenodo.19152177)
+
 **Spatial orchestration through nucleation physics.**
 
 A validated framework for predicting and optimising multi-agent coordination using reaction-diffusion-renewal dynamics. The equation predicts which formations will amplify and which will fragment — before you run the simulation.
@@ -123,8 +125,18 @@ The nucleation interpretation came while clearing strawberry plants in the garde
 ## Citation
 
 ```
-Edwards, B.G. (2026). From Spatial Substrate to Game Engine: A Topology-Aware 
-Coordination Heuristic for Dense Tactical Regimes. Paper v1.7.
+Edwards, B.G. (2026). GRIMOIRE: A Topology-Aware Coordination Heuristic 
+for Dense Tactical Regimes — From Spatial Substrate to Game Engine. 
+Zenodo. https://doi.org/10.5281/zenodo.19152177
+```
+
+Prior work:
+```
+Edwards, B.G. (2025). Unified Multiversal Dynamics (UMD) v1.0. 
+Zenodo. https://doi.org/10.5281/zenodo.17743734
+
+Edwards, B.G. (2025). UMD and Bioenergetic Applications v2.0. 
+Zenodo. https://doi.org/10.5281/zenodo.17743948
 ```
 
 ---
