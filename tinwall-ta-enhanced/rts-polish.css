@@ -1,0 +1,10 @@
+#rts-fx{position:absolute;inset:0;pointer-events:none;z-index:9}
+#macro-hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:10px;font-family:Inter,system-ui,sans-serif;pointer-events:none}
+.macro-card{background:rgba(8,14,26,.78);border:1px solid #7ed4ff55;border-radius:10px;padding:7px 10px;min-width:180px;color:#d9f2ff;box-shadow:0 6px 20px #001b3344}
+.macro-title{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#91dcff}
+.macro-row{font-size:12px;margin-top:3px;display:flex;justify-content:space-between;gap:8px}
+#macro-meter{height:6px;border-radius:999px;background:#102036;overflow:hidden;margin-top:5px}
+#macro-fill{height:6px;background:linear-gradient(90deg,#58c8ff,#7cffc5);width:35%;transition:width .2s}
+.float-dmg{position:absolute;z-index:31;pointer-events:none;font:700 12px Inter,sans-serif;color:#ffb3b3;text-shadow:0 0 8px #000}
+
+#fq{display:none !important}

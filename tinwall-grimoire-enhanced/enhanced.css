@@ -1,0 +1,9 @@
+#grimoire-overlay{position:absolute;inset:0;pointer-events:none;z-index:7;mix-blend-mode:screen;opacity:.58}
+#grimoire-panel{position:absolute;top:96px;left:12px;z-index:28;pointer-events:all;background:rgba(4,10,24,.82);border:1px solid #4cb8ff66;border-radius:10px;padding:10px 12px;min-width:250px;backdrop-filter: blur(8px);box-shadow:0 8px 28px #00a6ff22,inset 0 0 0 1px #8ee0ff22;color:#d7f2ff;font-family:Inter,system-ui,sans-serif}
+#grimoire-panel h3{margin:0 0 6px 0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8cd8ff}
+#seed-btn{width:100%;border:none;border-radius:8px;padding:9px 10px;background:linear-gradient(90deg,#6f43ff,#32d8ff);color:#001626;font-weight:800;cursor:pointer;margin-bottom:8px}
+#seed-result{font-size:12px;line-height:1.45;color:#c6e8ff}
+.gsm-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.06em;margin-left:4px}
+.gsm-DORMANT{background:#4b3c19;color:#ffd98c}.gsm-FRAGILE{background:#4b1f1f;color:#ff9e9e}.gsm-EDGE\ CASE{background:#544c18;color:#fff0a1}.gsm-AMPLIFYING{background:#153f2c;color:#98ffc5}.gsm-RESILIENT{background:#183a57;color:#9fd5ff}
+.seed-pulse{position:absolute;width:8px;height:8px;border-radius:50%;background:#8ef;box-shadow:0 0 12px #5cf;animation:seedPulse 1.2s ease-out forwards;pointer-events:none;z-index:26}
+@keyframes seedPulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(4);opacity:0}}
