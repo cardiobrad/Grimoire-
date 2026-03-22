@@ -28,6 +28,7 @@ button.sel{outline:2px solid #7fd5ff}
 #touchKnob{position:absolute;left:28px;top:28px;width:34px;height:34px;border-radius:50%;background:#89d9ff;border:1px solid #3a5c7a}
 #touchCmd{position:absolute;right:12px;bottom:12px;padding:10px 12px;border-radius:10px;border:1px solid #56728f;background:rgba(20,30,44,.7);font-size:12px;z-index:7;display:none}
 #toast{position:absolute;left:50%;transform:translateX(-50%);top:10px;background:rgba(12,20,31,.9);border:1px solid #3f5a78;border-radius:999px;padding:6px 12px;font-size:12px;color:#cbe7ff;z-index:7;pointer-events:none}
+#loadingScreen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,8,12,.94);color:#cbe7ff;font-size:22px;font-weight:700;letter-spacing:.6px;z-index:20}
 @media (max-width: 960px){
   #layout{grid-template-columns:1fr}
   #ui{display:none}
@@ -48,6 +49,7 @@ button.sel{outline:2px solid #7fd5ff}
   <div id="gameWrap">
     <canvas id="game"></canvas>
     <canvas id="mini"></canvas>
+    <div id="loadingScreen">MYTHFORGE: IRON ECLIPSE — Loading...</div>
     <div id="touchMove"><div id="touchKnob"></div></div>
     <div id="touchCmd">Long press = command</div>
     <div id="toast">LMB select, drag box-select, RMB smart command.</div>
@@ -74,6 +76,7 @@ const statusEl = document.getElementById('status');
 const buildBtns = document.getElementById('buildBtns');
 const trainBtns = document.getElementById('trainBtns');
 const toast = document.getElementById('toast');
+const loadingScreen = document.getElementById('loadingScreen');
 
 const TILE = 28, MAP_W = 128, MAP_H = 128;
 const WORLD_W = MAP_W * TILE, WORLD_H = MAP_H * TILE;
@@ -93,6 +96,80 @@ const TEAM_PLAYER = 1, TEAM_ENEMY = 2;
 const OCC_EMPTY = 0, OCC_BLOCK = 1;
 const occ = new Uint8Array(MAP_W*MAP_H);
 const flowField = new Float32Array(48*48); // hidden grimoire field
+const spriteRoles = {
+  infantry:'infantry',
+  commander:'commander',
+  tankBody:'tankBody',
+  tankTurret:'tankTurret',
+  aircraft:'aircraft',
+  hq:'hq',
+  refinery:'refinery',
+  power:'power',
+  barracks:'barracks',
+  turret:'turret',
+  ore:'ore'
+};
+const spriteCandidates = {
+  infantry:[
+    'assets/sci-fi-rts/PNG/Units/unit_01.png',
+    'assets/sci-fi-rts/PNG/Units/scifiUnit_01.png',
+    'assets/sci-fi-rts/Units/unit_01.png',
+    'assets/sci-fi-rts/scifiUnit_01.png'
+  ],
+  commander:[
+    'assets/sci-fi-rts/PNG/Units/unit_06.png',
+    'assets/sci-fi-rts/PNG/Units/scifiUnit_06.png',
+    'assets/sci-fi-rts/Units/unit_06.png',
+    'assets/sci-fi-rts/scifiUnit_06.png'
+  ],
+  tankBody:[
+    'assets/top-down-tanks-redux/PNG/Default size/tankBody_green.png',
+    'assets/top-down-tanks-redux/PNG/Default size/tankBody_blue.png',
+    'assets/top-down-tanks-redux/Default size/tankBody_green.png'
+  ],
+  tankTurret:[
+    'assets/top-down-tanks-redux/PNG/Default size/tankBlue_barrel2_outline.png',
+    'assets/top-down-tanks-redux/PNG/Default size/tankGreen_barrel2_outline.png',
+    'assets/top-down-tanks-redux/Default size/tankBlue_barrel2_outline.png'
+  ],
+  aircraft:[
+    'assets/sci-fi-rts/PNG/Units/unit_14.png',
+    'assets/sci-fi-rts/PNG/Units/scifiUnit_14.png',
+    'assets/sci-fi-rts/Units/unit_14.png',
+    'assets/sci-fi-rts/scifiUnit_14.png'
+  ],
+  hq:[
+    'assets/sci-fi-rts/PNG/Structures/structure_01.png',
+    'assets/sci-fi-rts/PNG/Structures/scifiStructure_01.png',
+    'assets/sci-fi-rts/Structures/structure_01.png'
+  ],
+  refinery:[
+    'assets/sci-fi-rts/PNG/Structures/structure_05.png',
+    'assets/sci-fi-rts/PNG/Structures/scifiStructure_05.png',
+    'assets/sci-fi-rts/Structures/structure_05.png'
+  ],
+  power:[
+    'assets/sci-fi-rts/PNG/Structures/structure_07.png',
+    'assets/sci-fi-rts/PNG/Structures/scifiStructure_07.png',
+    'assets/sci-fi-rts/Structures/structure_07.png'
+  ],
+  barracks:[
+    'assets/sci-fi-rts/PNG/Structures/structure_03.png',
+    'assets/sci-fi-rts/PNG/Structures/scifiStructure_03.png',
+    'assets/sci-fi-rts/Structures/structure_03.png'
+  ],
+  turret:[
+    'assets/sci-fi-rts/PNG/Structures/structure_11.png',
+    'assets/sci-fi-rts/PNG/Structures/scifiStructure_11.png',
+    'assets/sci-fi-rts/Structures/structure_11.png'
+  ],
+  ore:[
+    'assets/sci-fi-rts/PNG/Resources/resource_01.png',
+    'assets/sci-fi-rts/PNG/Resources/scifiResource_01.png',
+    'assets/sci-fi-rts/Resources/resource_01.png'
+  ]
+};
+const sprites = Object.create(null);
 
 const UNIT_TYPES = {
  commander:{name:'Commander',hp:300,speed:74,range:130,damage:20,rof:0.75,proj:220,costM:0,costE:0,size:16,flying:false},
@@ -127,6 +204,31 @@ function dist(a,b,c,d){return Math.hypot(c-a,d-b)}
 function tIdx(tx,ty){return ty*MAP_W+tx}
 function worldToTile(x,y){return [Math.floor(x/TILE), Math.floor(y/TILE)]}
 function tileCenter(tx,ty){return [tx*TILE + TILE*0.5, ty*TILE + TILE*0.5]}
+
+function loadSprite(src){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function loadSpriteRole(role){
+  for(const src of spriteCandidates[role]||[]){
+    try{
+      const img = await loadSprite(src);
+      sprites[role] = img;
+      return true;
+    }catch(_){}
+  }
+  return false;
+}
+
+async function preloadSprites(){
+  const roles = Object.values(spriteRoles);
+  await Promise.all(roles.map(loadSpriteRole));
+}
 
 function resize(){
   const w = wrap.clientWidth, h = wrap.clientHeight;
@@ -377,7 +479,7 @@ function updateHiddenField(dt){
     const i=y*48+x, c=flowField[i];
     const n=flowField[((y+47)%48)*48+x], s=flowField[((y+1)%48)*48+x], w=flowField[y*48+((x+47)%48)], e=flowField[y*48+((x+1)%48)];
     const lap=n+s+w+e-4*c;
-    tmp[i]=c + dt*(D*lap - L*c + 0.018*Math.sin(A*c));
+    tmp[i]=Math.max(0, c + dt*(D*lap + L*c*c*Math.sin(A*c)));
   }
   flowField.set(tmp);
   for(const u of state.units){ if(!u.alive) continue; const gx=clamp((u.x/WORLD_W*47)|0,0,47), gy=clamp((u.y/WORLD_H*47)|0,0,47); flowField[gy*48+gx]+= (u.team===TEAM_PLAYER?0.017:-0.017); }
@@ -538,35 +640,33 @@ function drawTerrain(){
     if(o.amount<=0) continue;
     const x=o.x-camera.x,y=o.y-camera.y;
     if(x<-40||y<-40||x>canvas.clientWidth+40||y>canvas.clientHeight+40) continue;
-    ctx.fillStyle=colors.ore;
-    ctx.beginPath();
-    ctx.moveTo(x-16,y+10); ctx.lineTo(x-23,y-6); ctx.lineTo(x-8,y-20); ctx.lineTo(x+14,y-16); ctx.lineTo(x+22,y+6); ctx.lineTo(x+3,y+20);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(x-6,y-8,10,5);
+    const oreSprite = sprites.ore;
+    if(oreSprite){
+      const sw = 34, sh = 34;
+      ctx.drawImage(oreSprite, x-sw*0.5, y-sh*0.5, sw, sh);
+    }else{
+      ctx.fillStyle=colors.ore;
+      ctx.beginPath();
+      ctx.moveTo(x-16,y+10); ctx.lineTo(x-23,y-6); ctx.lineTo(x-8,y-20); ctx.lineTo(x+14,y-16); ctx.lineTo(x+22,y+6); ctx.lineTo(x+3,y+20);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(x-6,y-8,10,5);
+    }
   }
 }
 
 function drawBuilding(b){
   const x=b.tx*TILE-camera.x, y=b.ty*TILE-camera.y, w=b.w*TILE, h=b.h*TILE;
   if(x+w<0||y+h<0||x>canvas.clientWidth||y>canvas.clientHeight) return;
-  const pal = b.team===TEAM_PLAYER?['#4f8ec0','#396686']:['#b95d5d','#7f3f3f'];
-  ctx.fillStyle=pal[0]; ctx.fillRect(x,y,w,h);
-  ctx.fillStyle=pal[1]; ctx.fillRect(x+3,y+3,w-6,h-6);
-  if(b.type==='hq'){
-    ctx.fillStyle='#d3ecff'; ctx.fillRect(x+w*0.3,y+h*0.28,w*0.4,h*0.34);
-    ctx.fillStyle='#2d4558'; ctx.fillRect(x+w*0.45,y+h*0.05,w*0.1,h*0.24);
-  }else if(b.type==='refinery'){
-    ctx.fillStyle='#8fb5ce'; ctx.fillRect(x+w*0.2,y+h*0.2,w*0.55,h*0.56);
-    ctx.fillStyle='#48687f'; ctx.fillRect(x+w*0.75,y+h*0.16,w*0.12,h*0.66);
-  }else if(b.type==='power'){
-    ctx.fillStyle='#9ed6ad'; ctx.fillRect(x+w*0.16,y+h*0.2,w*0.68,h*0.58);
-    ctx.fillStyle='#53a06a'; ctx.fillRect(x+w*0.36,y+h*0.08,w*0.28,h*0.16);
-  }else if(b.type==='barracks'){
-    ctx.fillStyle='#c6ad8b'; ctx.fillRect(x+w*0.14,y+h*0.2,w*0.72,h*0.58);
-    ctx.fillStyle='#8e7656'; ctx.fillRect(x+w*0.34,y+h*0.2,w*0.32,h*0.2);
-  }else if(b.type==='turret'){
-    ctx.fillStyle='#d9c1a7'; ctx.fillRect(x+w*0.15,y+h*0.15,w*0.7,h*0.7);
-    ctx.strokeStyle='#28231d'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(x+w*0.5,y+h*0.5); ctx.lineTo(x+w*0.95,y+h*0.28); ctx.stroke();
+  const sprite = sprites[b.type];
+  if(sprite){
+    ctx.drawImage(sprite,x,y,w,h);
+    if(b.team===TEAM_ENEMY){
+      ctx.fillStyle='rgba(185,30,30,.18)';
+      ctx.fillRect(x,y,w,h);
+    }
+  }else{
+    ctx.fillStyle=b.team===TEAM_PLAYER?'#4f8ec0':'#b95d5d';
+    ctx.fillRect(x,y,w,h);
   }
   const hpR=b.hp/b.maxHp; ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(x,y-7,w,4); ctx.fillStyle=b.team===TEAM_PLAYER?'#83f0a6':'#ff7f88'; ctx.fillRect(x,y-7,w*hpR,4);
 }
@@ -574,26 +674,21 @@ function drawBuilding(b){
 function drawUnit(u){
   const x=u.x-camera.x, y=u.y-camera.y;
   if(x<-30||y<-30||x>canvas.clientWidth+30||y>canvas.clientHeight+30) return;
-  const col = u.team===TEAM_PLAYER?['#a8defe','#4988bd']:['#ffb0b0','#b75151'];
+  const sprite = sprites[u.type];
   ctx.save(); ctx.translate(x,y);
-  if(u.type==='infantry'){
-    ctx.fillStyle=col[1]; ctx.fillRect(-4,-8,8,12);
-    ctx.fillStyle=col[0]; ctx.fillRect(-3,-13,6,5);
-    ctx.fillStyle='#2a3440'; ctx.fillRect(4,-8,7,3);
-  }else if(u.type==='commander'){
-    ctx.fillStyle=col[1]; ctx.fillRect(-7,-10,14,16);
-    ctx.fillStyle=col[0]; ctx.fillRect(-5,-16,10,6);
-    ctx.fillStyle='#f8cf86'; ctx.fillRect(-2,-3,4,6);
-    ctx.fillStyle='#4fd1ff'; ctx.fillRect(-6,4,12,2);
-  }else if(u.type==='tank'){
-    ctx.fillStyle=col[1]; ctx.fillRect(-13,-9,26,18);
-    ctx.fillStyle=col[0]; ctx.fillRect(-7,-5,14,10);
-    ctx.fillStyle='#222f3c'; ctx.fillRect(7,-2,13,4);
-    ctx.fillStyle='#2a3a4b'; ctx.fillRect(-16,-10,5,20); ctx.fillRect(11,-10,5,20);
-  }else if(u.type==='aircraft'){
-    ctx.fillStyle=col[0];
-    ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(13,3); ctx.lineTo(3,6); ctx.lineTo(0,13); ctx.lineTo(-3,6); ctx.lineTo(-13,3); ctx.closePath(); ctx.fill();
-    ctx.fillStyle=col[1]; ctx.fillRect(-2,-6,4,12);
+  if(u.type==='tank' && sprites.tankBody){
+    ctx.drawImage(sprites.tankBody,-16,-16,32,32);
+    if(sprites.tankTurret) ctx.drawImage(sprites.tankTurret,-16,-16,32,32);
+  }else if(sprite){
+    const size = u.type==='commander'?32:u.type==='aircraft'?30:24;
+    ctx.drawImage(sprite,-size*0.5,-size*0.5,size,size);
+  }else{
+    ctx.fillStyle=u.team===TEAM_PLAYER?'#a8defe':'#ffb0b0';
+    ctx.beginPath(); ctx.arc(0,0,uRadius(u),0,Math.PI*2); ctx.fill();
+  }
+  if(u.team===TEAM_ENEMY){
+    ctx.fillStyle='rgba(185,30,30,.2)';
+    ctx.beginPath(); ctx.arc(0,0,uRadius(u)+2,0,Math.PI*2); ctx.fill();
   }
   if(state.selected.has(u) && u.team===TEAM_PLAYER){ ctx.strokeStyle='#9de2ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,uRadius(u)+5,0,Math.PI*2); ctx.stroke(); }
   ctx.restore();
@@ -774,10 +869,16 @@ mini.addEventListener('mousedown',e=>{
   ensureCamera();
 });
 
-buildButtons();
-createWorld();
-setTimeout(()=>toast.style.display='none',4200);
-requestAnimationFrame(step);
+async function boot(){
+  await preloadSprites();
+  loadingScreen.style.display='none';
+  buildButtons();
+  createWorld();
+  setTimeout(()=>toast.style.display='none',4200);
+  requestAnimationFrame(step);
+}
+
+boot();
 })();
 </script>
 </body>
