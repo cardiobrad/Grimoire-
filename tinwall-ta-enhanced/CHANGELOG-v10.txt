@@ -1,0 +1,61 @@
+TINWALL v10 — Age of Dumnonia
+CHANGELOG from v9
+=================================
+
+Based on: "From Spatial Substrate to Game Engine" paper v1.4
+Equation: ∂U/∂t = D∇²U + λU²sin(αU) + Γ(U)
+Engineering law: U(t+1) = U(t) + αS + βC − γD − δO + ρR
+
+NEW FEATURES (242 new lines, 0 lines removed from v9):
+
+1. FORMATION QUALITY GSM (Enhancement #1 from paper)
+   - computeFormationGSM() scores selected units' spatial topology
+   - HUD shows DORMANT / FRAGILE / EDGE CASE / AMPLIFYING / RESILIENT
+   - Appears automatically when 2+ units selected
+   - Teaches players that geometry matters more than headcount
+
+2. SQUAD COHESION SYSTEM (Enhancement #2 from paper)
+   - Every player unit carries a cohesion value U updated per tick
+   - U(t+1) = U(t) + αS + βC − γD − δO + ρR
+   - Allies nearby increase cohesion (βC coordination)
+   - Enemy fire decreases it (−γD disruption)
+   - Unit stacking decreases it (−δO overload penalty)
+   - Idle wounded units recover it (ρR renewal)
+
+3. COMBAT DEGRADATION (Gemini's −δO insight)
+   - Cohesion modulates actual damage output
+   - Full cohesion = 100% damage
+   - Floor cohesion = 60% damage
+   - Units stacking together lose effectiveness, not just position
+
+4. VISUAL COHESION AURA
+   - Coloured ring under each player unit
+   - Green = high cohesion (well-formed, supported)
+   - Red = low cohesion (isolated, stacking, under fire)
+
+5. INFLUENCE FIELD — THE PDE BENEATH THE MAP (Enhancement #3)
+   - Full reaction-diffusion-renewal equation running on 72×54 grid
+   - ∂U/∂t = D∇²U + λU²sin(αU) − decay
+   - Updates every 5 frames (12 Hz) — CFL stable
+   - Units inject energy into neighbouring cells
+   - High-field zones boost cohesion
+   - Visible as heatmap overlay on minimap
+
+6. PHASE-AWARE AI (Enhancement #4)
+   - AI reads influence field strength instead of fixed timers
+   - Attacks when field is concentrated (army cohesive)
+   - Retreats when field collapses (army fragmented)
+   - Creates emergent attack-retreat-regroup rhythm
+   - The sine term's oscillation drives AI behaviour
+
+DESIGN LAWS IMPLEMENTED:
+  ✅ Seeds beat noise (tribe selection = structured seed)
+  ✅ Structure > brute force (GSM scores formations)
+  ✅ Geometry > intensity (Formation Quality HUD)
+  ✅ Attraction requires repulsion (anti-stacking + cohesion penalty)
+  ✅ Soft over hard (AI brain over A* pathfinding)
+  ✅ Renewal > accumulation (influence field oscillation + AI retreat)
+  ✅ Protected core (Sacred Tin Mine firewall)
+
+All seven design laws are now implemented.
+The equation found its home.

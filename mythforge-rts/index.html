@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; media-src 'self';" />
+  <title>MYTHFORGE: IRON ECLIPSE</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="topbar">
+    <div><b>MYTHFORGE: IRON ECLIPSE</b></div>
+    <div id="resources">Metal: 0 | Energy: 0 | Units: 0</div>
+    <div class="top-actions">
+      <button id="btn-pause" class="mini">Pause</button>
+      <button id="btn-mute" class="mini">Sound: On</button>
+      <button id="btn-save" class="mini">Save</button>
+      <button id="btn-load" class="mini">Load</button>
+    </div>
+    <div id="status">Secure 3 enemy cores to win.</div>
+  </div>
+
+  <div id="shell">
+    <canvas id="game" width="1280" height="720"></canvas>
+    <aside id="panel">
+      <h3>Build</h3>
+      <button data-build="refinery">Refinery (120M)</button>
+      <button data-build="power">Power Core (90M)</button>
+      <button data-build="barracks">Barracks (180M 60E)</button>
+      <button data-build="turret">Defense Turret (140M 30E)</button>
+      <h3>Train</h3>
+      <button id="train-inf">Infantry (45M 10E)</button>
+      <button id="train-tank">Siege Tank (90M 45E)</button>
+      <button id="train-air">Skimmer (120M 70E)</button>
+      <h3>Ops</h3>
+      <button id="btn-audit">Run Runtime Audit</button>
+      <pre id="audit-log">Audit: idle</pre>
+      <p class="tip">LMB select / drag-select. RMB smart command. Hotkeys: 1-4 build, Q/W/E train, Space pause, M mute.</p>
+    </aside>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
