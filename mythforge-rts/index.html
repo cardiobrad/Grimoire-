@@ -1,44 +1,784 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; media-src 'self';" />
-  <title>MYTHFORGE: IRON ECLIPSE</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>MYTHFORGE: IRON ECLIPSE</title>
+<style>
+:root{--bg:#0b0f13;--panel:#121922;--text:#d7e2f0;--acc:#6ec1ff;--good:#7bf7a6;--warn:#ffba63;--bad:#ff7f8a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;overflow:hidden}
+#hud{position:fixed;left:0;top:0;right:0;height:54px;background:linear-gradient(#17212d,#111923);display:flex;align-items:center;gap:14px;padding:8px 12px;border-bottom:1px solid #263446;z-index:8}
+#hud strong{color:#c7e8ff;letter-spacing:.7px}
+#hud .pill{padding:4px 8px;background:#0e141c;border:1px solid #2c3a4b;border-radius:999px;font-size:13px}
+#status{color:#a6e4ff;font-weight:700}
+#layout{position:fixed;inset:54px 0 0 0;display:grid;grid-template-columns:1fr 250px}
+#gameWrap{position:relative;overflow:hidden;background:#04080c}
+canvas{display:block;width:100%;height:100%;image-rendering:auto}
+#ui{background:var(--panel);border-left:1px solid #263446;padding:10px;overflow:auto}
+#ui h3{margin:8px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:#8fbce2}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+button{background:#1a2735;color:#d8e7f7;border:1px solid #33506e;border-radius:8px;padding:7px 6px;font-size:12px;cursor:pointer}
+button:hover{background:#223349}
+button:active{transform:translateY(1px)}
+button.sel{outline:2px solid #7fd5ff}
+.small{font-size:11px;color:#9bb0c8;line-height:1.4;margin-top:8px}
+#mini{position:absolute;right:8px;bottom:8px;width:190px;height:130px;background:rgba(10,15,24,.88);border:1px solid #3a4f68;border-radius:8px;z-index:6}
+#touchMove{position:absolute;left:12px;bottom:12px;width:92px;height:92px;border-radius:50%;border:2px solid #4f6781;background:rgba(20,30,44,.45);z-index:7;display:none;touch-action:none}
+#touchKnob{position:absolute;left:28px;top:28px;width:34px;height:34px;border-radius:50%;background:#89d9ff;border:1px solid #3a5c7a}
+#touchCmd{position:absolute;right:12px;bottom:12px;padding:10px 12px;border-radius:10px;border:1px solid #56728f;background:rgba(20,30,44,.7);font-size:12px;z-index:7;display:none}
+#toast{position:absolute;left:50%;transform:translateX(-50%);top:10px;background:rgba(12,20,31,.9);border:1px solid #3f5a78;border-radius:999px;padding:6px 12px;font-size:12px;color:#cbe7ff;z-index:7;pointer-events:none}
+@media (max-width: 960px){
+  #layout{grid-template-columns:1fr}
+  #ui{display:none}
+  #touchMove,#touchCmd{display:block}
+  #mini{width:150px;height:104px}
+}
+</style>
 </head>
 <body>
-  <div id="topbar">
-    <div><b>MYTHFORGE: IRON ECLIPSE</b></div>
-    <div id="resources">Metal: 0 | Energy: 0 | Units: 0</div>
-    <div class="top-actions">
-      <button id="btn-pause" class="mini">Pause</button>
-      <button id="btn-mute" class="mini">Sound: On</button>
-      <button id="btn-save" class="mini">Save</button>
-      <button id="btn-load" class="mini">Load</button>
-    </div>
-    <div id="status">Secure 3 enemy cores to win.</div>
+<div id="hud">
+  <strong>MYTHFORGE: IRON ECLIPSE</strong>
+  <span class="pill" id="resMetal">Metal: 0</span>
+  <span class="pill" id="resEnergy">Energy: 0</span>
+  <span class="pill" id="supply">Units: 0</span>
+  <span class="pill" id="status">Destroy enemy HQ</span>
+</div>
+<div id="layout">
+  <div id="gameWrap">
+    <canvas id="game"></canvas>
+    <canvas id="mini"></canvas>
+    <div id="touchMove"><div id="touchKnob"></div></div>
+    <div id="touchCmd">Long press = command</div>
+    <div id="toast">LMB select, drag box-select, RMB smart command.</div>
   </div>
+  <aside id="ui">
+    <h3>Build (B)</h3>
+    <div class="grid" id="buildBtns"></div>
+    <h3>Train (T)</h3>
+    <div class="grid" id="trainBtns"></div>
+    <h3>Info</h3>
+    <div class="small">Camera: WASD + mouse-edge pan.<br/>Smart command: Right-click on ground to move, enemy to attack, refinery near ore to harvest.<br/>Mobile: tap select, drag to box-select, long-press to command.</div>
+  </aside>
+</div>
+<script>
+(() => {
+'use strict';
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+const mini = document.getElementById('mini'), mctx = mini.getContext('2d');
+const wrap = document.getElementById('gameWrap');
+const resMetalEl = document.getElementById('resMetal');
+const resEnergyEl = document.getElementById('resEnergy');
+const supplyEl = document.getElementById('supply');
+const statusEl = document.getElementById('status');
+const buildBtns = document.getElementById('buildBtns');
+const trainBtns = document.getElementById('trainBtns');
+const toast = document.getElementById('toast');
 
-  <div id="shell">
-    <canvas id="game" width="1280" height="720"></canvas>
-    <aside id="panel">
-      <h3>Build</h3>
-      <button data-build="refinery">Refinery (120M)</button>
-      <button data-build="power">Power Core (90M)</button>
-      <button data-build="barracks">Barracks (180M 60E)</button>
-      <button data-build="turret">Defense Turret (140M 30E)</button>
-      <h3>Train</h3>
-      <button id="train-inf">Infantry (45M 10E)</button>
-      <button id="train-tank">Siege Tank (90M 45E)</button>
-      <button id="train-air">Skimmer (120M 70E)</button>
-      <h3>Ops</h3>
-      <button id="btn-audit">Run Runtime Audit</button>
-      <pre id="audit-log">Audit: idle</pre>
-      <p class="tip">LMB select / drag-select. RMB smart command. Hotkeys: 1-4 build, Q/W/E train, Space pause, M mute.</p>
-    </aside>
-  </div>
+const TILE = 28, MAP_W = 128, MAP_H = 128;
+const WORLD_W = MAP_W * TILE, WORLD_H = MAP_H * TILE;
+const colors = {groundA:'#2a3e2e',groundB:'#324935',ore:'#6f7f97',grid:'rgba(0,0,0,.14)'};
+const keys = Object.create(null);
+const mouse = {x:0,y:0,wx:0,wy:0,left:false,right:false,drag:false,sx:0,sy:0};
+let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+let camera = {x:WORLD_W/2-600,y:WORLD_H/2-360,vx:0,vy:0};
+let lastTime = performance.now();
+let gameOver = false, winner = null;
+let placing = null;
+let selectRect = null;
+let longPressTimer = null;
+let touchMode = false;
 
-  <script type="module" src="game.js"></script>
+const TEAM_PLAYER = 1, TEAM_ENEMY = 2;
+const OCC_EMPTY = 0, OCC_BLOCK = 1;
+const occ = new Uint8Array(MAP_W*MAP_H);
+const flowField = new Float32Array(48*48); // hidden grimoire field
+
+const UNIT_TYPES = {
+ commander:{name:'Commander',hp:300,speed:74,range:130,damage:20,rof:0.75,proj:220,costM:0,costE:0,size:16,flying:false},
+ infantry:{name:'Infantry',hp:68,speed:78,range:105,damage:10,rof:0.6,proj:250,costM:60,costE:20,size:10,flying:false},
+ tank:{name:'Tank',hp:220,speed:50,range:150,damage:28,rof:1.2,proj:270,costM:160,costE:60,size:15,flying:false},
+ aircraft:{name:'Aircraft',hp:140,speed:120,range:170,damage:18,rof:0.5,proj:340,costM:180,costE:90,size:12,flying:true}
+};
+
+const BUILD_TYPES = {
+ hq:{name:'HQ',w:4,h:4,hp:2000,costM:0,costE:0,power:0},
+ refinery:{name:'Refinery',w:3,h:3,hp:720,costM:140,costE:25,power:-20},
+ power:{name:'Power Plant',w:3,h:3,hp:640,costM:120,costE:0,power:+90},
+ barracks:{name:'Barracks',w:3,h:3,hp:720,costM:180,costE:45,power:-10},
+ turret:{name:'Turret',w:2,h:2,hp:500,costM:130,costE:40,power:-15,range:190,damage:16,rof:0.42}
+};
+
+const buildOrder = ['refinery','power','barracks','turret'];
+const trainOrder = ['infantry','tank','aircraft'];
+
+const state = {
+ metal:440, energy:260,
+ enemyMetal:420, enemyEnergy:260,
+ units:[], buildings:[], projectiles:[], particles:[], texts:[], ores:[],
+ selected:new Set(),
+ playerHQ:null, enemyHQ:null,
+ ai:{buildCD:6,waveCD:20,targetWave:5}
+};
+
+function rnd(a,b){return a + Math.random()*(b-a)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function dist(a,b,c,d){return Math.hypot(c-a,d-b)}
+function tIdx(tx,ty){return ty*MAP_W+tx}
+function worldToTile(x,y){return [Math.floor(x/TILE), Math.floor(y/TILE)]}
+function tileCenter(tx,ty){return [tx*TILE + TILE*0.5, ty*TILE + TILE*0.5]}
+
+function resize(){
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = Math.floor(w*dpr); canvas.height = Math.floor(h*dpr);
+  canvas.style.width = w+'px'; canvas.style.height = h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function ensureCamera(){
+  camera.x = clamp(camera.x,0,WORLD_W-canvas.clientWidth);
+  camera.y = clamp(camera.y,0,WORLD_H-canvas.clientHeight);
+}
+
+function addText(x,y,text,color='#fff'){ state.texts.push({x,y,text,color,t:1.2}); }
+function addBurst(x,y,col='#ffb66e',n=10){ for(let i=0;i<n;i++) state.particles.push({x,y,vx:rnd(-90,90),vy:rnd(-90,90),t:rnd(.2,.55),col}); }
+
+let AC = null;
+function initAudio(){ if(AC) return; try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(_){} }
+function sfx(type){
+  if(!AC) return;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type==='hit'?'square':type==='build'?'triangle':'sawtooth';
+  o.frequency.value = type==='hit'?160:type==='shoot'?240:320;
+  g.gain.value = 0.0001;
+  o.connect(g); g.connect(AC.destination);
+  const t=AC.currentTime;
+  g.gain.exponentialRampToValueAtTime(0.03,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+  o.start(t); o.stop(t+0.15);
+}
+
+function markOcc(tx,ty,w,h,val){
+  for(let y=ty;y<ty+h;y++) for(let x=tx;x<tx+w;x++) if(x>=0&&y>=0&&x<MAP_W&&y<MAP_H) occ[tIdx(x,y)] = val;
+}
+
+function canPlace(team,type,tx,ty){
+  const bt = BUILD_TYPES[type];
+  if(tx<1||ty<1||tx+bt.w>=MAP_W-1||ty+bt.h>=MAP_H-1) return false;
+  for(let y=ty;y<ty+bt.h;y++) for(let x=tx;x<tx+bt.w;x++) if(occ[tIdx(x,y)]!==OCC_EMPTY) return false;
+  for(const o of state.ores){ if(xyRectOverlap(tx*TILE,ty*TILE,bt.w*TILE,bt.h*TILE,o.x-28,o.y-28,56,56)) return false; }
+  if(team===TEAM_PLAYER && state.playerHQ){
+    const [cx,cy]=tileCenter(tx+bt.w*0.5,ty+bt.h*0.5);
+    if(dist(cx,cy,state.playerHQ.x,state.playerHQ.y)>850) return false;
+  }
+  if(team===TEAM_ENEMY && state.enemyHQ){
+    const [cx,cy]=tileCenter(tx+bt.w*0.5,ty+bt.h*0.5);
+    if(dist(cx,cy,state.enemyHQ.x,state.enemyHQ.y)>900) return false;
+  }
+  return true;
+}
+
+function xyRectOverlap(ax,ay,aw,ah,bx,by,bw,bh){ return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by; }
+
+let nextId = 1;
+function spawnBuilding(team,type,tx,ty){
+  const bt=BUILD_TYPES[type];
+  const b={id:nextId++,team,type,tx,ty,w:bt.w,h:bt.h,x:(tx+bt.w/2)*TILE,y:(ty+bt.h/2)*TILE,hp:bt.hp,maxHp:bt.hp,cool:0,queue:[],alive:true};
+  state.buildings.push(b); markOcc(tx,ty,bt.w,bt.h,OCC_BLOCK);
+  if(type==='hq'){ if(team===TEAM_PLAYER) state.playerHQ=b; else state.enemyHQ=b; }
+  return b;
+}
+
+function spawnUnit(team,type,x,y){
+  const t=UNIT_TYPES[type];
+  const u={id:nextId++,team,type,x,y,hp:t.hp,maxHp:t.hp,cd:rnd(0,0.3),vx:0,vy:0,tx:x,ty:y,path:null,pathI:0,sel:false,alive:true,order:null,formation:null,lastCell:-1};
+  state.units.push(u);
+  return u;
+}
+
+function createWorld(){
+  occ.fill(0); state.units.length=0; state.buildings.length=0; state.projectiles.length=0; state.particles.length=0; state.texts.length=0; state.ores.length=0; state.selected.clear();
+  for(let i=0;i<18;i++){
+    const ox = rnd(8,MAP_W-8)*TILE, oy=rnd(8,MAP_H-8)*TILE;
+    state.ores.push({x:ox,y:oy,amount:rnd(900,1700)});
+  }
+  spawnBuilding(TEAM_PLAYER,'hq',8,8);
+  spawnBuilding(TEAM_PLAYER,'power',15,8);
+  spawnBuilding(TEAM_PLAYER,'barracks',8,14);
+  spawnBuilding(TEAM_PLAYER,'refinery',15,13);
+  spawnBuilding(TEAM_ENEMY,'hq',MAP_W-12,MAP_H-12);
+  spawnBuilding(TEAM_ENEMY,'power',MAP_W-19,MAP_H-12);
+  spawnBuilding(TEAM_ENEMY,'barracks',MAP_W-12,MAP_H-19);
+  spawnBuilding(TEAM_ENEMY,'refinery',MAP_W-19,MAP_H-19);
+
+  spawnUnit(TEAM_PLAYER,'commander',12*TILE,12*TILE);
+  for(let i=0;i<5;i++) spawnUnit(TEAM_PLAYER,'infantry',(11+i)*TILE,14*TILE);
+  spawnUnit(TEAM_PLAYER,'tank',14*TILE,16*TILE);
+  spawnUnit(TEAM_ENEMY,'commander',(MAP_W-12)*TILE,(MAP_H-12)*TILE);
+  for(let i=0;i<6;i++) spawnUnit(TEAM_ENEMY,'infantry',(MAP_W-15+i)*TILE,(MAP_H-14)*TILE);
+  spawnUnit(TEAM_ENEMY,'tank',(MAP_W-14)*TILE,(MAP_H-16)*TILE);
+}
+
+function gridNeighbors(i){
+  const x=i%MAP_W, y=(i/MAP_W)|0, out=[];
+  for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
+    if(dx===0&&dy===0) continue; const nx=x+dx, ny=y+dy;
+    if(nx<0||ny<0||nx>=MAP_W||ny>=MAP_H) continue;
+    if(occ[tIdx(nx,ny)]===OCC_BLOCK) continue;
+    if(dx&&dy){ if(occ[tIdx(x+dx,y)]===OCC_BLOCK||occ[tIdx(x,y+dy)]===OCC_BLOCK) continue; }
+    out.push(tIdx(nx,ny));
+  }
+  return out;
+}
+function heuristic(a,b){ const ax=a%MAP_W, ay=(a/MAP_W)|0, bx=b%MAP_W, by=(b/MAP_W)|0; return Math.abs(ax-bx)+Math.abs(ay-by); }
+function findPath(sx,sy,gx,gy){
+  const st=tIdx(sx,sy), gt=tIdx(gx,gy); if(st===gt) return null;
+  const open=[st], came=new Int32Array(MAP_W*MAP_H); came.fill(-1);
+  const g=new Float32Array(MAP_W*MAP_H); g.fill(1e9); g[st]=0;
+  const f=new Float32Array(MAP_W*MAP_H); f.fill(1e9); f[st]=heuristic(st,gt);
+  const inOpen=new Uint8Array(MAP_W*MAP_H); inOpen[st]=1;
+  while(open.length){
+    let best=0; for(let i=1;i<open.length;i++) if(f[open[i]]<f[open[best]]) best=i;
+    const cur=open.splice(best,1)[0]; inOpen[cur]=0;
+    if(cur===gt){
+      const path=[]; let c=cur;
+      while(c!==st&&c!==-1){ const x=c%MAP_W, y=(c/MAP_W)|0; path.push(tileCenter(x,y)); c=came[c]; }
+      path.reverse(); return path;
+    }
+    for(const n of gridNeighbors(cur)){
+      const cx=cur%MAP_W, cy=(cur/MAP_W)|0, nx=n%MAP_W, ny=(n/MAP_W)|0;
+      const step=(cx!==nx&&cy!==ny)?1.42:1;
+      const tg=g[cur]+step;
+      if(tg<g[n]){ came[n]=cur; g[n]=tg; f[n]=tg+heuristic(n,gt); if(!inOpen[n]){ open.push(n); inOpen[n]=1; } }
+    }
+  }
+  return null;
+}
+
+function issueMove(units,wx,wy){
+  const cols = Math.ceil(Math.sqrt(units.length));
+  const spacing = 24;
+  units.forEach((u,i)=>{
+    const ox=((i%cols)-(cols-1)/2)*spacing, oy=(((i/cols)|0)-((cols-1)/2))*spacing;
+    const tx=wx+ox, ty=wy+oy;
+    const [sx,sy]=worldToTile(u.x,u.y), [gx,gy]=worldToTile(tx,ty);
+    if(!u.alive||sx<0||sy<0||gx<0||gy<0||sx>=MAP_W||sy>=MAP_H||gx>=MAP_W||gy>=MAP_H||occ[tIdx(gx,gy)]===OCC_BLOCK) return;
+    u.path=findPath(sx,sy,gx,gy);
+    u.pathI=0; u.order={type:'move',x:tx,y:ty}; u.formation={cx:wx,cy:wy,count:units.length};
+  });
+}
+
+function smartCommand(wx,wy){
+  const sel=[...state.selected].filter(u=>u.alive);
+  if(!sel.length||gameOver) return;
+  const enemyUnit = state.units.find(u=>u.team!==TEAM_PLAYER&&u.alive&&dist(wx,wy,u.x,u.y)<uRadius(u)+8);
+  const enemyB = state.buildings.find(b=>b.team!==TEAM_PLAYER&&b.alive&&pointInBuilding(wx,wy,b));
+  if(enemyUnit||enemyB){
+    for(const u of sel) u.order={type:'attack',target:enemyUnit||enemyB};
+    return;
+  }
+  issueMove(sel,wx,wy);
+}
+
+function pointInBuilding(x,y,b){
+  return x>=b.tx*TILE && x<=(b.tx+b.w)*TILE && y>=b.ty*TILE && y<=(b.ty+b.h)*TILE;
+}
+function uRadius(u){ return UNIT_TYPES[u.type].size; }
+
+function tryBuild(type,tx,ty,team=TEAM_PLAYER){
+  const bt=BUILD_TYPES[type];
+  if(!canPlace(team,type,tx,ty)) return false;
+  if(team===TEAM_PLAYER){ if(state.metal<bt.costM||state.energy<bt.costE) return false; state.metal-=bt.costM; state.energy-=bt.costE; }
+  else { if(state.enemyMetal<bt.costM||state.enemyEnergy<bt.costE) return false; state.enemyMetal-=bt.costM; state.enemyEnergy-=bt.costE; }
+  spawnBuilding(team,type,tx,ty); addBurst((tx+bt.w/2)*TILE,(ty+bt.h/2)*TILE,'#9ad9ff',18); sfx('build'); return true;
+}
+
+function queueTrain(type){
+  const t=UNIT_TYPES[type];
+  const barr=state.buildings.find(b=>b.team===TEAM_PLAYER&&b.type==='barracks'&&b.alive);
+  if(!barr) return;
+  if(state.metal<t.costM||state.energy<t.costE) return;
+  state.metal-=t.costM; state.energy-=t.costE;
+  barr.queue.push({type,time:type==='infantry'?4:type==='tank'?7:8});
+}
+
+function aiLogic(dt){
+  const ai=state.ai; ai.buildCD-=dt; ai.waveCD-=dt;
+  const eAlive=state.units.filter(u=>u.team===TEAM_ENEMY&&u.alive).length;
+  if(ai.buildCD<=0){
+    ai.buildCD = rnd(6,10);
+    const nearHQx = state.enemyHQ.tx-8+((Math.random()*10)|0), nearHQy=state.enemyHQ.ty-8+((Math.random()*10)|0);
+    if(Math.random()<0.3) tryBuild('power',nearHQx,nearHQy,TEAM_ENEMY);
+    else if(Math.random()<0.7) tryBuild('turret',nearHQx,nearHQy,TEAM_ENEMY);
+    else tryBuild('barracks',nearHQx,nearHQy,TEAM_ENEMY);
+  }
+  const eb = state.buildings.filter(b=>b.team===TEAM_ENEMY&&b.type==='barracks'&&b.alive);
+  for(const b of eb){
+    if(Math.random()<dt*0.55){
+      const pick=Math.random();
+      const type = pick<0.5?'infantry':pick<0.82?'tank':'aircraft';
+      const t=UNIT_TYPES[type];
+      if(state.enemyMetal>=t.costM&&state.enemyEnergy>=t.costE){ state.enemyMetal-=t.costM; state.enemyEnergy-=t.costE; b.queue.push({type,time:type==='infantry'?4:type==='tank'?7:8}); }
+    }
+  }
+  if(ai.waveCD<=0 && eAlive>=ai.targetWave){
+    ai.waveCD=rnd(18,28); ai.targetWave=Math.min(18, ai.targetWave+1);
+    const attackers=state.units.filter(u=>u.team===TEAM_ENEMY&&u.alive&&u.type!=='commander').slice(0,18);
+    const target=state.playerHQ?.alive?state.playerHQ:null;
+    if(target){ for(const u of attackers) u.order={type:'attack',target}; }
+    addText(camera.x+canvas.clientWidth/2,camera.y+90,'Enemy wave incoming!','#ffb3b9');
+  }
+}
+
+function nearestEnemy(u){
+  let best=null,bd=1e9;
+  for(const e of state.units){ if(!e.alive||e.team===u.team) continue; const d=dist(u.x,u.y,e.x,e.y); if(d<bd){bd=d;best=e;} }
+  for(const b of state.buildings){ if(!b.alive||b.team===u.team) continue; const d=dist(u.x,u.y,b.x,b.y); if(d<bd){bd=d;best=b;} }
+  return [best,bd];
+}
+
+function launchProjectile(sx,sy,target,damage,speed,team){
+  state.projectiles.push({x:sx,y:sy,target,damage,speed,team,alive:true});
+  sfx('shoot');
+}
+
+function applyDamage(target,dmg){
+  if(!target.alive) return;
+  target.hp -= dmg;
+  addText(target.x,target.y-18,'-'+dmg.toFixed(0),'#ff9ca4');
+  addBurst(target.x,target.y,'#ff9a77',7);
+  sfx('hit');
+  if(target.hp<=0){ target.alive=false; addBurst(target.x,target.y,'#ffcf82',28); }
+}
+
+function gsmFormationBuff(unit,allies){
+  let near=0;
+  for(const a of allies){ if(a===unit||!a.alive||a.type==='aircraft') continue; if(dist(unit.x,unit.y,a.x,a.y)<58) near++; }
+  return near>=2?1.03:1.0;
+}
+function fieldSample(wx,wy){
+  const gx=clamp((wx/WORLD_W*47)|0,0,47), gy=clamp((wy/WORLD_H*47)|0,0,47);
+  return flowField[gy*48+gx];
+}
+function hiddenBuff(unit,allies){
+  const f = fieldSample(unit.x,unit.y); // -1..1-ish
+  const scalar = clamp(f*0.05,-0.05,0.05);
+  const form = gsmFormationBuff(unit,allies)-1;
+  return {speed:1+scalar, damage:1+scalar+form};
+}
+
+function updateHiddenField(dt){
+  // Hidden Grimoire PDE: D=0.12, λ=0.45, α=π on 48x48
+  const D=0.12, L=0.45, A=Math.PI;
+  const tmp = new Float32Array(flowField.length);
+  for(let y=0;y<48;y++) for(let x=0;x<48;x++){
+    const i=y*48+x, c=flowField[i];
+    const n=flowField[((y+47)%48)*48+x], s=flowField[((y+1)%48)*48+x], w=flowField[y*48+((x+47)%48)], e=flowField[y*48+((x+1)%48)];
+    const lap=n+s+w+e-4*c;
+    tmp[i]=c + dt*(D*lap - L*c + 0.018*Math.sin(A*c));
+  }
+  flowField.set(tmp);
+  for(const u of state.units){ if(!u.alive) continue; const gx=clamp((u.x/WORLD_W*47)|0,0,47), gy=clamp((u.y/WORLD_H*47)|0,0,47); flowField[gy*48+gx]+= (u.team===TEAM_PLAYER?0.017:-0.017); }
+}
+
+function updateEconomy(dt){
+  const pPwr = state.buildings.filter(b=>b.alive&&b.team===TEAM_PLAYER).reduce((a,b)=>a+(BUILD_TYPES[b.type].power||0),0);
+  const ePwr = state.buildings.filter(b=>b.alive&&b.team===TEAM_ENEMY).reduce((a,b)=>a+(BUILD_TYPES[b.type].power||0),0);
+  const pRef = state.buildings.filter(b=>b.alive&&b.team===TEAM_PLAYER&&b.type==='refinery').length;
+  const eRef = state.buildings.filter(b=>b.alive&&b.team===TEAM_ENEMY&&b.type==='refinery').length;
+  state.metal += dt*(pRef*11 + 2.4);
+  state.enemyMetal += dt*(eRef*10 + 2.1);
+  state.energy += dt*(Math.max(-30,pPwr));
+  state.enemyEnergy += dt*(Math.max(-35,ePwr));
+}
+
+function updateBuildings(dt){
+  for(const b of state.buildings){
+    if(!b.alive) continue;
+    if(b.type==='turret'){
+      b.cool -= dt;
+      if(b.cool<=0){
+        const target = state.units.find(u=>u.alive&&u.team!==b.team&&dist(b.x,b.y,u.x,u.y)<BUILD_TYPES.turret.range);
+        if(target){ b.cool=BUILD_TYPES.turret.rof; launchProjectile(b.x,b.y,target,BUILD_TYPES.turret.damage,300,b.team); }
+      }
+    }
+    if(b.queue.length){
+      const q=b.queue[0]; q.time-=dt;
+      if(q.time<=0){
+        const sx=(b.tx+b.w+0.4)*TILE, sy=(b.ty+b.h*0.5)*TILE;
+        spawnUnit(b.team,q.type,sx,sy); b.queue.shift();
+      }
+    }
+  }
+}
+
+function isBlockedForUnit(u,tx,ty){
+  if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H) return true;
+  if(u.type==='aircraft') return false;
+  return occ[tIdx(tx,ty)]===OCC_BLOCK;
+}
+
+function updateUnits(dt){
+  const aliveUnits = state.units.filter(u=>u.alive);
+  for(const u of aliveUnits){
+    const t = UNIT_TYPES[u.type];
+    const allies = aliveUnits.filter(a=>a.team===u.team);
+    const hb = hiddenBuff(u,allies);
+    let speed=t.speed*hb.speed;
+    u.cd-=dt;
+
+    if(u.order?.type==='attack' && (!u.order.target || !u.order.target.alive)) u.order=null;
+    if(!u.order){
+      const [n,d]=nearestEnemy(u);
+      if(n&&d<t.range*0.95) u.order={type:'attack',target:n};
+    }
+
+    if(u.order?.type==='attack' && u.order.target?.alive){
+      const target=u.order.target;
+      const tx=target.x, ty=target.y;
+      const d=dist(u.x,u.y,tx,ty);
+      if(d<=t.range){
+        u.vx*=0.8; u.vy*=0.8;
+        if(u.cd<=0){ u.cd=t.rof; launchProjectile(u.x,u.y,target,t.damage*hb.damage,t.proj,u.team); }
+      }else{
+        const [sx,sy]=worldToTile(u.x,u.y), [gx,gy]=worldToTile(tx,ty);
+        if((u.lastCell!==tIdx(sx,sy) || !u.path || u.pathI>=u.path.length) && sx>=0&&sy>=0&&gx>=0&&gy>=0&&sx<MAP_W&&sy<MAP_H&&gx<MAP_W&&gy<MAP_H){
+          u.path = findPath(sx,sy,gx,gy); u.pathI=0; u.lastCell=tIdx(sx,sy);
+        }
+      }
+    }
+
+    if(u.path && u.pathI<u.path.length){
+      const [tx,ty]=u.path[u.pathI];
+      const dx=tx-u.x, dy=ty-u.y, d=Math.hypot(dx,dy);
+      if(d<4) u.pathI++;
+      else {
+        const nx=dx/(d||1), ny=dy/(d||1);
+        u.vx = nx*speed; u.vy = ny*speed;
+      }
+      if(u.pathI>=u.path.length) u.path=null;
+    }else if(u.order?.type==='move'){
+      const dx=u.order.x-u.x, dy=u.order.y-u.y, d=Math.hypot(dx,dy);
+      if(d>8){ u.vx=dx/d*speed; u.vy=dy/d*speed; } else { u.order=null; u.vx*=0.7;u.vy*=0.7; }
+    }else{ u.vx*=0.7; u.vy*=0.7; }
+
+    u.x += u.vx*dt; u.y += u.vy*dt;
+    u.x = clamp(u.x,8,WORLD_W-8); u.y = clamp(u.y,8,WORLD_H-8);
+
+    const [cx,cy] = worldToTile(u.x,u.y);
+    if(isBlockedForUnit(u,cx,cy)){
+      u.x -= u.vx*dt*1.3; u.y -= u.vy*dt*1.3;
+      u.path = null; u.order = null;
+    }
+  }
+}
+
+function updateProjectiles(dt){
+  for(const p of state.projectiles){
+    if(!p.alive||!p.target||!p.target.alive){ p.alive=false; continue; }
+    const dx=p.target.x-p.x, dy=p.target.y-p.y, d=Math.hypot(dx,dy);
+    if(d<8){ applyDamage(p.target,p.damage); p.alive=false; continue; }
+    const nx=dx/(d||1), ny=dy/(d||1);
+    p.x += nx*p.speed*dt; p.y += ny*p.speed*dt;
+    state.particles.push({x:p.x,y:p.y,vx:rnd(-14,14),vy:rnd(-14,14),t:0.09,col:'#ffd59e'});
+  }
+  state.projectiles = state.projectiles.filter(p=>p.alive);
+}
+
+function updateParticles(dt){
+  for(const p of state.particles){ p.t-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.96; p.vy*=0.96; }
+  state.particles = state.particles.filter(p=>p.t>0);
+  for(const t of state.texts){ t.t-=dt; t.y-=25*dt; }
+  state.texts = state.texts.filter(t=>t.t>0);
+}
+
+function updateWinLose(){
+  if(gameOver) return;
+  if(!state.enemyHQ || !state.enemyHQ.alive){ gameOver=true; winner='Victory'; }
+  if(!state.playerHQ || !state.playerHQ.alive){ gameOver=true; winner='Defeat'; }
+  if(gameOver){ statusEl.textContent = winner==='Victory'?'Victory! Enemy HQ destroyed.':'Defeat! Your HQ fell.'; }
+}
+
+function updateCamera(dt){
+  const pan = 430;
+  camera.vx = ((keys['d']||keys['arrowright'])?1:0) - ((keys['a']||keys['arrowleft'])?1:0);
+  camera.vy = ((keys['s']||keys['arrowdown'])?1:0) - ((keys['w']||keys['arrowup'])?1:0);
+  if(!touchMode){
+    const edge=22, w=canvas.clientWidth,h=canvas.clientHeight;
+    if(mouse.x<edge) camera.vx-=1;
+    if(mouse.x>w-edge) camera.vx+=1;
+    if(mouse.y<edge) camera.vy-=1;
+    if(mouse.y>h-edge) camera.vy+=1;
+  }
+  const mag=Math.hypot(camera.vx,camera.vy)||1;
+  camera.x += (camera.vx/mag)*pan*dt;
+  camera.y += (camera.vy/mag)*pan*dt;
+  ensureCamera();
+}
+
+function uiTick(){
+  resMetalEl.textContent = `Metal: ${state.metal|0}`;
+  resEnergyEl.textContent = `Energy: ${state.energy|0}`;
+  supplyEl.textContent = `Units: ${state.units.filter(u=>u.alive&&u.team===TEAM_PLAYER).length}`;
+}
+
+function drawTerrain(){
+  const sx=(camera.x/TILE)|0, sy=(camera.y/TILE)|0;
+  const ex=((camera.x+canvas.clientWidth)/TILE+1)|0, ey=((camera.y+canvas.clientHeight)/TILE+1)|0;
+  for(let y=sy;y<=ey;y++) for(let x=sx;x<=ex;x++){
+    if(x<0||y<0||x>=MAP_W||y>=MAP_H) continue;
+    const px=x*TILE-camera.x, py=y*TILE-camera.y;
+    ctx.fillStyle=((x+y)&1)?colors.groundA:colors.groundB;
+    ctx.fillRect(px,py,TILE,TILE);
+    ctx.fillStyle=colors.grid; ctx.fillRect(px,py,TILE,1); ctx.fillRect(px,py,1,TILE);
+  }
+  for(const o of state.ores){
+    if(o.amount<=0) continue;
+    const x=o.x-camera.x,y=o.y-camera.y;
+    if(x<-40||y<-40||x>canvas.clientWidth+40||y>canvas.clientHeight+40) continue;
+    ctx.fillStyle=colors.ore;
+    ctx.beginPath();
+    ctx.moveTo(x-16,y+10); ctx.lineTo(x-23,y-6); ctx.lineTo(x-8,y-20); ctx.lineTo(x+14,y-16); ctx.lineTo(x+22,y+6); ctx.lineTo(x+3,y+20);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.2)'; ctx.fillRect(x-6,y-8,10,5);
+  }
+}
+
+function drawBuilding(b){
+  const x=b.tx*TILE-camera.x, y=b.ty*TILE-camera.y, w=b.w*TILE, h=b.h*TILE;
+  if(x+w<0||y+h<0||x>canvas.clientWidth||y>canvas.clientHeight) return;
+  const pal = b.team===TEAM_PLAYER?['#4f8ec0','#396686']:['#b95d5d','#7f3f3f'];
+  ctx.fillStyle=pal[0]; ctx.fillRect(x,y,w,h);
+  ctx.fillStyle=pal[1]; ctx.fillRect(x+3,y+3,w-6,h-6);
+  if(b.type==='hq'){
+    ctx.fillStyle='#d3ecff'; ctx.fillRect(x+w*0.3,y+h*0.28,w*0.4,h*0.34);
+    ctx.fillStyle='#2d4558'; ctx.fillRect(x+w*0.45,y+h*0.05,w*0.1,h*0.24);
+  }else if(b.type==='refinery'){
+    ctx.fillStyle='#8fb5ce'; ctx.fillRect(x+w*0.2,y+h*0.2,w*0.55,h*0.56);
+    ctx.fillStyle='#48687f'; ctx.fillRect(x+w*0.75,y+h*0.16,w*0.12,h*0.66);
+  }else if(b.type==='power'){
+    ctx.fillStyle='#9ed6ad'; ctx.fillRect(x+w*0.16,y+h*0.2,w*0.68,h*0.58);
+    ctx.fillStyle='#53a06a'; ctx.fillRect(x+w*0.36,y+h*0.08,w*0.28,h*0.16);
+  }else if(b.type==='barracks'){
+    ctx.fillStyle='#c6ad8b'; ctx.fillRect(x+w*0.14,y+h*0.2,w*0.72,h*0.58);
+    ctx.fillStyle='#8e7656'; ctx.fillRect(x+w*0.34,y+h*0.2,w*0.32,h*0.2);
+  }else if(b.type==='turret'){
+    ctx.fillStyle='#d9c1a7'; ctx.fillRect(x+w*0.15,y+h*0.15,w*0.7,h*0.7);
+    ctx.strokeStyle='#28231d'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(x+w*0.5,y+h*0.5); ctx.lineTo(x+w*0.95,y+h*0.28); ctx.stroke();
+  }
+  const hpR=b.hp/b.maxHp; ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(x,y-7,w,4); ctx.fillStyle=b.team===TEAM_PLAYER?'#83f0a6':'#ff7f88'; ctx.fillRect(x,y-7,w*hpR,4);
+}
+
+function drawUnit(u){
+  const x=u.x-camera.x, y=u.y-camera.y;
+  if(x<-30||y<-30||x>canvas.clientWidth+30||y>canvas.clientHeight+30) return;
+  const col = u.team===TEAM_PLAYER?['#a8defe','#4988bd']:['#ffb0b0','#b75151'];
+  ctx.save(); ctx.translate(x,y);
+  if(u.type==='infantry'){
+    ctx.fillStyle=col[1]; ctx.fillRect(-4,-8,8,12);
+    ctx.fillStyle=col[0]; ctx.fillRect(-3,-13,6,5);
+    ctx.fillStyle='#2a3440'; ctx.fillRect(4,-8,7,3);
+  }else if(u.type==='commander'){
+    ctx.fillStyle=col[1]; ctx.fillRect(-7,-10,14,16);
+    ctx.fillStyle=col[0]; ctx.fillRect(-5,-16,10,6);
+    ctx.fillStyle='#f8cf86'; ctx.fillRect(-2,-3,4,6);
+    ctx.fillStyle='#4fd1ff'; ctx.fillRect(-6,4,12,2);
+  }else if(u.type==='tank'){
+    ctx.fillStyle=col[1]; ctx.fillRect(-13,-9,26,18);
+    ctx.fillStyle=col[0]; ctx.fillRect(-7,-5,14,10);
+    ctx.fillStyle='#222f3c'; ctx.fillRect(7,-2,13,4);
+    ctx.fillStyle='#2a3a4b'; ctx.fillRect(-16,-10,5,20); ctx.fillRect(11,-10,5,20);
+  }else if(u.type==='aircraft'){
+    ctx.fillStyle=col[0];
+    ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(13,3); ctx.lineTo(3,6); ctx.lineTo(0,13); ctx.lineTo(-3,6); ctx.lineTo(-13,3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=col[1]; ctx.fillRect(-2,-6,4,12);
+  }
+  if(state.selected.has(u) && u.team===TEAM_PLAYER){ ctx.strokeStyle='#9de2ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(0,0,uRadius(u)+5,0,Math.PI*2); ctx.stroke(); }
+  ctx.restore();
+  const hpR=u.hp/u.maxHp; ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(x-12,y+uRadius(u)+5,24,3); ctx.fillStyle=u.team===TEAM_PLAYER?'#86f0ab':'#ff838c'; ctx.fillRect(x-12,y+uRadius(u)+5,24*hpR,3);
+}
+
+function drawProjectiles(){
+  for(const p of state.projectiles){ const x=p.x-camera.x,y=p.y-camera.y; ctx.fillStyle=p.team===TEAM_PLAYER?'#ffeaa7':'#ff9d9d'; ctx.fillRect(x-2,y-2,4,4); }
+}
+function drawParticles(){
+  for(const p of state.particles){ const a=clamp(p.t/0.5,0,1),x=p.x-camera.x,y=p.y-camera.y; ctx.fillStyle=p.col; ctx.globalAlpha=a; ctx.fillRect(x,y,2,2); ctx.globalAlpha=1; }
+  for(const t of state.texts){ const x=t.x-camera.x,y=t.y-camera.y; ctx.globalAlpha=clamp(t.t,0,1); ctx.fillStyle=t.color; ctx.font='12px sans-serif'; ctx.fillText(t.text,x,y); ctx.globalAlpha=1; }
+}
+function drawSelection(){
+  if(selectRect){
+    const {x,y,w,h}=selectRect;
+    ctx.fillStyle='rgba(120,190,255,.12)'; ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='rgba(140,210,255,.75)'; ctx.strokeRect(x+.5,y+.5,w,h);
+  }
+  if(placing){
+    const [tx,ty]=worldToTile(mouse.wx,mouse.wy); const bt=BUILD_TYPES[placing];
+    const ok=canPlace(TEAM_PLAYER,placing,tx,ty);
+    ctx.fillStyle=ok?'rgba(110,255,160,.25)':'rgba(255,110,120,.25)';
+    ctx.strokeStyle=ok?'rgba(110,255,160,.7)':'rgba(255,110,120,.7)';
+    ctx.fillRect(tx*TILE-camera.x,ty*TILE-camera.y,bt.w*TILE,bt.h*TILE);
+    ctx.strokeRect(tx*TILE-camera.x+.5,ty*TILE-camera.y+.5,bt.w*TILE,bt.h*TILE);
+  }
+}
+function drawMinimap(){
+  const w=mini.width=mini.clientWidth*dpr,h=mini.height=mini.clientHeight*dpr; mctx.setTransform(dpr,0,0,dpr,0,0);
+  const cw=mini.clientWidth,ch=mini.clientHeight;
+  mctx.fillStyle='#0a1018'; mctx.fillRect(0,0,cw,ch);
+  mctx.strokeStyle='rgba(120,160,195,.4)'; mctx.strokeRect(.5,.5,cw-1,ch-1);
+  const sx=cw/WORLD_W, sy=ch/WORLD_H;
+  for(const b of state.buildings){ if(!b.alive) continue; mctx.fillStyle=b.team===TEAM_PLAYER?'#6ec1ff':'#ff8c8c'; mctx.fillRect(b.tx*TILE*sx,b.ty*TILE*sy,b.w*TILE*sx,b.h*TILE*sy); }
+  for(const u of state.units){ if(!u.alive) continue; mctx.fillStyle=u.team===TEAM_PLAYER?'#8fd9ff':'#ff9ea7'; mctx.fillRect(u.x*sx-1,u.y*sy-1,2,2); }
+  mctx.strokeStyle='#d5efff'; mctx.strokeRect(camera.x*sx,camera.y*sy,canvas.clientWidth*sx,canvas.clientHeight*sy);
+}
+
+function render(){
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+  drawTerrain();
+  for(const b of state.buildings) if(b.alive) drawBuilding(b);
+  for(const u of state.units) if(u.alive&&u.type!=='aircraft') drawUnit(u);
+  for(const u of state.units) if(u.alive&&u.type==='aircraft') drawUnit(u);
+  drawProjectiles();
+  drawParticles();
+  drawSelection();
+  if(gameOver){
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
+    ctx.fillStyle='#fff'; ctx.font='bold 42px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(winner==='Victory'?'VICTORY':'DEFEAT',canvas.clientWidth/2,canvas.clientHeight/2);
+    ctx.font='16px Inter, sans-serif'; ctx.fillText('Refresh page to play again',canvas.clientWidth/2,canvas.clientHeight/2+36); ctx.textAlign='left';
+  }
+  drawMinimap();
+}
+
+function step(t){
+  const dt = Math.min(0.033,(t-lastTime)/1000); lastTime=t;
+  if(!gameOver){
+    updateHiddenField(dt);
+    updateEconomy(dt);
+    updateBuildings(dt);
+    updateUnits(dt);
+    updateProjectiles(dt);
+    updateParticles(dt);
+    aiLogic(dt);
+    updateCamera(dt);
+    updateWinLose();
+    uiTick();
+  }
+  render();
+  requestAnimationFrame(step);
+}
+
+function screenToWorld(x,y){ return [x+camera.x,y+camera.y]; }
+function pickPlayerUnit(wx,wy){
+  let hit=null, bd=1e9;
+  for(const u of state.units){ if(!u.alive||u.team!==TEAM_PLAYER) continue; const d=dist(wx,wy,u.x,u.y); if(d<uRadius(u)+6 && d<bd){bd=d;hit=u;} }
+  return hit;
+}
+function selectInRect(r){
+  state.selected.clear();
+  const x0=Math.min(r.x,r.x+r.w)+camera.x, x1=Math.max(r.x,r.x+r.w)+camera.x;
+  const y0=Math.min(r.y,r.y+r.h)+camera.y, y1=Math.max(r.y,r.y+r.h)+camera.y;
+  for(const u of state.units){ if(!u.alive||u.team!==TEAM_PLAYER) continue; if(u.x>=x0&&u.x<=x1&&u.y>=y0&&u.y<=y1) state.selected.add(u); }
+}
+
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true; if(e.key==='Escape') placing=null; if(e.key==='b') placing='turret'; });
+window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect();
+  mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top;
+  [mouse.wx,mouse.wy] = screenToWorld(mouse.x,mouse.y);
+  if(mouse.left && mouse.drag){ selectRect={x:mouse.sx,y:mouse.sy,w:mouse.x-mouse.sx,h:mouse.y-mouse.sy}; }
+});
+canvas.addEventListener('mousedown',e=>{
+  initAudio();
+  if(e.button===2){ const [wx,wy]=screenToWorld(mouse.x,mouse.y); smartCommand(wx,wy); return; }
+  mouse.left=true; mouse.drag=true; mouse.sx=mouse.x; mouse.sy=mouse.y;
+});
+canvas.addEventListener('mouseup',e=>{
+  if(e.button!==0) return;
+  mouse.left=false;
+  const moved=Math.hypot(mouse.x-mouse.sx,mouse.y-mouse.sy)>8;
+  if(placing){ const [tx,ty]=worldToTile(mouse.wx,mouse.wy); if(tryBuild(placing,tx,ty,TEAM_PLAYER)) placing=null; mouse.drag=false; selectRect=null; return; }
+  if(moved && selectRect){ selectInRect(selectRect); }
+  else {
+    const [wx,wy]=screenToWorld(mouse.x,mouse.y);
+    const u=pickPlayerUnit(wx,wy);
+    state.selected.clear(); if(u) state.selected.add(u);
+  }
+  selectRect=null; mouse.drag=false;
+});
+
+function buildButtons(){
+  for(const k of buildOrder){
+    const bt=BUILD_TYPES[k], b=document.createElement('button');
+    b.textContent=`${bt.name} (${bt.costM}M/${bt.costE}E)`;
+    b.onclick=()=>{ placing=k; [...buildBtns.children].forEach(c=>c.classList.remove('sel')); b.classList.add('sel'); initAudio(); };
+    buildBtns.appendChild(b);
+  }
+  for(const k of trainOrder){
+    const t=UNIT_TYPES[k], b=document.createElement('button');
+    b.textContent=`${t.name} (${t.costM}M/${t.costE}E)`;
+    b.onclick=()=>{ queueTrain(k); initAudio(); };
+    trainBtns.appendChild(b);
+  }
+}
+
+// Mobile touch: tap select, long-press command
+let touchStart = null;
+canvas.addEventListener('touchstart',e=>{
+  touchMode=true; initAudio();
+  const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+  const x=t.clientX-r.left, y=t.clientY-r.top; touchStart={x,y,time:performance.now()};
+  [mouse.wx,mouse.wy]=screenToWorld(x,y);
+  longPressTimer=setTimeout(()=>{ smartCommand(mouse.wx,mouse.wy); navigator.vibrate?.(30); },420);
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  if(!touchStart) return;
+  const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+  const x=t.clientX-r.left, y=t.clientY-r.top;
+  if(Math.hypot(x-touchStart.x,y-touchStart.y)>12){ clearTimeout(longPressTimer); selectRect={x:touchStart.x,y:touchStart.y,w:x-touchStart.x,h:y-touchStart.y}; }
+},{passive:true});
+canvas.addEventListener('touchend',e=>{
+  if(!touchStart) return;
+  clearTimeout(longPressTimer);
+  const t=e.changedTouches[0], r=canvas.getBoundingClientRect();
+  const x=t.clientX-r.left, y=t.clientY-r.top;
+  if(selectRect){ selectInRect(selectRect); selectRect=null; }
+  else if(performance.now()-touchStart.time<360){
+    const [wx,wy]=screenToWorld(x,y); const u=pickPlayerUnit(wx,wy); state.selected.clear(); if(u) state.selected.add(u);
+  }
+  touchStart=null;
+},{passive:true});
+
+// Touch camera joystick
+const touchMove = document.getElementById('touchMove'), touchKnob=document.getElementById('touchKnob');
+let joyId=null, joyVec={x:0,y:0};
+touchMove.addEventListener('touchstart',e=>{ const t=e.changedTouches[0]; joyId=t.identifier; },{passive:true});
+touchMove.addEventListener('touchmove',e=>{
+  for(const t of e.changedTouches){ if(t.identifier!==joyId) continue;
+    const r=touchMove.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    let dx=t.clientX-cx, dy=t.clientY-cy; const m=Math.hypot(dx,dy), lim=28; if(m>lim){dx=dx/m*lim;dy=dy/m*lim;}
+    touchKnob.style.left=(28+dx)+'px'; touchKnob.style.top=(28+dy)+'px'; joyVec={x:dx/lim,y:dy/lim};
+    camera.x += joyVec.x*11; camera.y += joyVec.y*11; ensureCamera();
+  }
+},{passive:true});
+touchMove.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(t.identifier===joyId){joyId=null; joyVec={x:0,y:0}; touchKnob.style.left='28px';touchKnob.style.top='28px';} }},{passive:true});
+
+mini.addEventListener('mousedown',e=>{
+  const r=mini.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top;
+  camera.x = x/r.width*WORLD_W - canvas.clientWidth/2;
+  camera.y = y/r.height*WORLD_H - canvas.clientHeight/2;
+  ensureCamera();
+});
+
+buildButtons();
+createWorld();
+setTimeout(()=>toast.style.display='none',4200);
+requestAnimationFrame(step);
+})();
+</script>
 </body>
 </html>
