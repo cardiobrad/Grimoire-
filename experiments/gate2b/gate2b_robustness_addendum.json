@@ -1,0 +1,101 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-13T20:09:37.968439+00:00",
+    "doc": "Gate 2B Robustness Addendum",
+    "sha256_csv": "1d40893ace3e5ea5769651e049cb515fc9e9770714c0056054f1b009aeaccabe",
+    "is_mock_data": false,
+    "data_source": "gate2b_pair_summary.csv (real recovered artifacts)"
+  },
+  "primary_result": {
+    "n": 37,
+    "k": 29,
+    "p_exact": 0.000376,
+    "passes": true
+  },
+  "family_jackknife": {
+    "result": {
+      "exclude_A": {
+        "k": 24,
+        "n": 31,
+        "p": 0.001663,
+        "passes": true
+      },
+      "exclude_B": {
+        "k": 23,
+        "n": 31,
+        "p": 0.005337,
+        "passes": true
+      },
+      "exclude_C": {
+        "k": 25,
+        "n": 31,
+        "p": 0.000439,
+        "passes": true
+      },
+      "exclude_D": {
+        "k": 25,
+        "n": 31,
+        "p": 0.000439,
+        "passes": true
+      },
+      "exclude_E": {
+        "k": 23,
+        "n": 31,
+        "p": 0.005337,
+        "passes": true
+      },
+      "exclude_F": {
+        "k": 26,
+        "n": 31,
+        "p": 9.6e-05,
+        "passes": true
+      },
+      "exclude_SHOWCASE": {
+        "k": 28,
+        "n": 36,
+        "p": 0.000597,
+        "passes": true
+      }
+    },
+    "all_families_pass": true,
+    "interpretation": "No single family drives the result \u2014 signal is distributed across all families"
+  },
+  "effect_size_thresholding": {
+    "result": {
+      "effect_ge_0.1": {
+        "k": 25,
+        "n": 31,
+        "p": 0.000439
+      },
+      "effect_ge_0.2": {
+        "k": 22,
+        "n": 26,
+        "p": 0.000267
+      },
+      "effect_ge_0.3": {
+        "k": 21,
+        "n": 23,
+        "p": 3.3e-05
+      },
+      "effect_ge_0.5": {
+        "k": 14,
+        "n": 15,
+        "p": 0.000488
+      }
+    },
+    "interpretation": "Signal strengthens monotonically as low-contrast pairs are excluded \u2014 failures are boundary cases not reversals"
+  },
+  "incorrect_pairs": {
+    "count": 8,
+    "mean_effect": 0.249,
+    "below_0.3": 6,
+    "family_F_failures": 3,
+    "interpretation": "6/8 failures have effect size < 0.3. Family F accounts for 3/8. These are genuine edge cases."
+  },
+  "honest_limits": [
+    "Reconstruction engine is NOT the original 20 March 2026 manifest-locked backend",
+    "This robustness addendum operates on the recovered gate2b_pair_summary.csv only",
+    "Front velocity and RMST fields are empty in the recovered CSV",
+    "Family F shows 3/6 accuracy \u2014 weakest family, worth investigating"
+  ]
+}

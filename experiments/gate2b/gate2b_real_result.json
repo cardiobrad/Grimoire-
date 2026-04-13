@@ -1,0 +1,44 @@
+{
+  "metadata": {
+    "timestamp": "2026-04-11T12:01:51.492711+00:00",
+    "protocol_version": "Gate2B-v2.4-realdata",
+    "repo": "https://github.com/cardiobrad/Grimoire-",
+    "doi": "10.5281/zenodo.19152177",
+    "sha256_csv": "1d40893ace3e5ea5769651e049cb515fc9e9770714c0056054f1b009aeaccabe",
+    "sha256_simulator": "1c245517c0f88c9086557794eec091779155f9b6b424334089b817eae35b35ad",
+    "is_mock_data": false,
+    "note": "Real simulator output from gate2b_pair_summary.csv"
+  },
+  "locked_params": {
+    "D": 0.12,
+    "lambda": 0.45,
+    "alpha_pi": true,
+    "grid": "64x64",
+    "movement": "frontier-pull",
+    "runs_per_pair": 30,
+    "censoring": "0%"
+  },
+  "results": {
+    "n_pairs": 37,
+    "correct": 29,
+    "incorrect": 8,
+    "accuracy": 0.7838,
+    "p_binomial_onesided": 0.000376,
+    "pass_threshold_k": 24,
+    "pass_threshold_p": 0.05,
+    "PASSES_GATE": true,
+    "gate2b_target_29_37": true,
+    "gate2b_target_p": true
+  },
+  "effect_sizes": {
+    "mean_effect_correct": 0.673,
+    "mean_effect_incorrect": 0.249,
+    "note": "Incorrect pairs are low-contrast edge cases, not systematic reversals"
+  },
+  "honest_limits": [
+    "85% frontier-pull / 15% U-gradient blends PDE into navigation \u2014 not pure PDE control",
+    "GSM predicts coverage geometry, not PDE dynamics directly",
+    "Front velocity RMST slots not yet populated",
+    "8 incorrect pairs are genuine boundary cases (mean |effect| = 0.249 vs 0.673 correct)"
+  ]
+}
