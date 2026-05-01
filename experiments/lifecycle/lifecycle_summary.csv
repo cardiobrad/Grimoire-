@@ -1,0 +1,6 @@
+policy,accuracy,acc_mean,acc_std,refreshes,corr_fail,corr_fail_mean,all_wrong_events,final_coherence,final_drift
+No Refresh,0.3512 ± 0.0147,0.3512,0.0147,0.0,0.2794 ± 0.0280,0.2794,55.9,0.0407,1.5970
+Fixed Interval (30 turns),0.7521 ± 0.0145,0.7521,0.0145,25.0,0.0015 ± 0.0029,0.0015,0.3,0.6856,0.2389
+Token Threshold (120 turns),0.5606 ± 0.0155,0.5606,0.0155,5.0,0.0491 ± 0.0157,0.0491,9.6,0.4203,0.6038
+Phase-Aware Sine Renewal,0.4551 ± 0.0181,0.4551,0.0181,131.5,0.2244 ± 0.0435,0.2244,32.4,1.0000,0.0000
+Phase-Aware Logistic (ABLATION),0.4822 ± 0.0200,0.4822,0.02,140.8,0.1930 ± 0.0436,0.193,25.7,1.0000,0.0000
